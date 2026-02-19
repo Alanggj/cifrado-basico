@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cifrador Clásico | César &amp; Atbash</title>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+
+    <header>
+        <div>
+            <div class="logo">Práctica 1</div>
+            <div class="subtitle">Cifrado Clásico · César &amp; Atbash · Base ASCII</div>
+        </div>
+    </header>
+
+    <main>
+
+        <section class="card" id="cipher-app">
+            <h2>Módulo de Cifrado / Descifrado</h2>
+
+
+            <div class="module-badge" id="module-badge">
+                <span class="dot"></span>
+                <span id="module-name">Módulo: César</span>
+            </div>
+
+            <div class="tab-bar">
+                <button class="active" id="tab-cesar" onclick="selectModule('cesar')">
+                    Cifrado César
+                </button>
+                <button id="tab-atbash" onclick="selectModule('atbash')">
+                    Cifrado Atbash
+                </button>
+            </div>
+
+            <label for="charset">
+                Conjunto de caracteres
+                <span class="badge">ASCII</span>
+            </label>
+            <input type="text" id="charset"
+                placeholder="Ej: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?"
+                value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?;:-_" />
+            <p style="font-size:.8rem;margin-top:.3rem;">
+                Define qué caracteres participan en el cifrado. Los caracteres del mensaje
+                que <em>no</em> estén en este conjunto pasarán tal cual al resultado.
+            </p>
+
+            <div id="cesar-options">
+                <div>
+                    <label for="shift-value">Desplazamiento (shift) <span class="badge">sólo César</span></label>
+                    <input type="number" id="shift-value" value="3" min="-9999" max="9999" />
+                </div>
+                <div>
+                    <label for="shift-info">Módulo (N)</label>
+                    <input type="text" id="shift-info" readonly placeholder="—" />
+                </div>
+            </div>
+
+
+            <label for="input-text">Texto de entrada</label>
+            <textarea id="input-text" placeholder="Escribe aquí el mensaje a cifrar o descifrar…"></textarea>
+
+
+            <div class="btn-row">
+                <button class="btn btn-encrypt" onclick="process('encrypt')">Cifrar</button>
+                <button class="btn btn-decrypt" onclick="process('decrypt')">Descifrar</button>
+                <button class="btn btn-clear" onclick="clearAll()">Limpiar</button>
+            </div>
+
+
+            <div id="output-section">
+                <label style="margin-top:1.2rem;">Resultado</label>
+                <div class="result-box" id="result-box"></div>
+                <div class="result-meta" id="result-meta"></div>
+                <div class="btn-row">
+                    <button class="btn btn-copy" onclick="copyResult()">Copiar resultado</button>
+                    <button class="btn btn-copy" onclick="swapToInput()">Usar como entrada</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        Práctica 1 &mdash; Seguridad en Sistemas &mdash; 2026<br />
+        Alan Gael Gallardo Jiménez &mdash; ID: 351914
+    </footer>
+
+
+    <script>
+        "use strict";
+        const App = {
+            module: "cesar"
+        };
+
+        // [Seccion1]
+        function selectModule(mod) {
+            App.module = mod;
+
+            document.getElementById("tab-cesar").classList.toggle("active", mod === "cesar");
+            document.getElementById("tab-atbash").classList.toggle("active", mod === "atbash");
+            const names = { cesar: "Módulo: César", atbash: "Módulo: Atbash" };
+            document.getElementById("module-name").textContent = names[mod];
+            // El campo shift solo aplica en César
+            document.getElementById("cesar-options").style.opacity = mod === "cesar" ? "1" : "0.3";
+            document.getElementById("shift-value").disabled = mod !== "cesar";
+            document.getElementById("output-section").classList.remove("visible");
+        }
+
+        // [Seccion2]
+        function cifrarCesar(texto, charset, shift) {
+            const N = charset.length;
+            if (N === 0) throw new Error("El conjunto de caracteres está vacío.");
+            const s = ((shift % N) + N) % N;
+            return [...texto].map(char => {
+                const idx = charset.indexOf(char);
+                if (idx === -1) return char;
+                return charset[(idx + s) % N];
+            }).join("");
+        }
+
+        // [Seccion3]
+        function descifrarCesar(textoCifrado, charset, shift) {
+            return cifrarCesar(textoCifrado, charset, -shift);
+        }
+
+        // [Seccion4]
+        function cifrarAtbash(texto, charset) {
+            const N = charset.length;
+            if (N === 0) throw new Error("El conjunto de caracteres está vacío.");
+            return [...texto].map(char => {
+                const idx = charset.indexOf(char);
+                if (idx === -1) return char;
+                return charset[(N - 1) - idx];
+            }).join("");
+        }
+
+        // [Seccion 5]
+        function descifrarAtbash(textoCifrado, charset) {
+            return cifrarAtbash(textoCifrado, charset);
+        }
+
+        // [Seccion6]
+        function process(action) {
+            try {
+                const charset = document.getElementById("charset").value;
+                const inputText = document.getElementById("input-text").value;
+                const shift = parseInt(document.getElementById("shift-value").value, 10) || 0;
+
+                if (!charset.trim()) throw new Error("El conjunto de caracteres no puede estar vacío.");
+                if (!inputText) throw new Error("Por favor escribe un texto a procesar.");
+
+                let resultado = "";
+                let metaInfo = "";
+                const N = charset.length;
+
+                if (App.module === "cesar") {
+                    const shiftNorm = ((shift % N) + N) % N;
+                    if (action === "encrypt") {
+                        resultado = cifrarCesar(inputText, charset, shift);
+                        metaInfo = `César | Cifrado | Shift: ${shift} (norm: ${shiftNorm}) | N: ${N}`;
+                    } else {
+                        resultado = descifrarCesar(inputText, charset, shift);
+                        metaInfo = `César | Descifrado | Shift: -${shift} | N: ${N}`;
+                    }
+                    document.getElementById("shift-info").value = `N = ${N}`;
+                } else {
+                    if (action === "encrypt") {
+                        resultado = cifrarAtbash(inputText, charset);
+                        metaInfo = `Atbash | Cifrado | N: ${N}`;
+                    } else {
+                        resultado = descifrarAtbash(inputText, charset);
+                        metaInfo = `Atbash | Descifrado | N: ${N}`;
+                    }
+                }
+
+                document.getElementById("result-box").textContent = resultado;
+                document.getElementById("result-meta").textContent = metaInfo;
+                document.getElementById("output-section").classList.add("visible");
+                document.getElementById("output-section").scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+            } catch (err) {
+                document.getElementById("result-box").textContent = "Error: " + err.message;
+                document.getElementById("result-box").style.color = "var(--red)";
+                document.getElementById("result-meta").textContent = "";
+                document.getElementById("output-section").classList.add("visible");
+                setTimeout(() => { document.getElementById("result-box").style.color = ""; }, 3000);
+            }
+        }
+
+        // [Seccion7]
+        function clearAll() {
+            document.getElementById("input-text").value = "";
+            document.getElementById("result-box").textContent = "";
+            document.getElementById("output-section").classList.remove("visible");
+        }
+
+        // [Seccion8]
+        function copyResult() {
+            const text = document.getElementById("result-box").textContent;
+            if (!text || text.startsWith("Error:")) return;
+            navigator.clipboard.writeText(text)
+                .then(() => alert("Resultado copiado al portapapeles."))
+                .catch(() => alert("No se pudo copiar automáticamente. Selecciona el texto manualmente."));
+        }
+
+        // [Seccion9]
+        function swapToInput() {
+            const text = document.getElementById("result-box").textContent;
+            if (!text || text.startsWith("Error:")) return;
+            document.getElementById("input-text").value = text;
+            document.getElementById("output-section").classList.remove("visible");
+            document.getElementById("input-text").focus();
+        }
+
+        // [Seccion10]
+        function init() {
+            document.getElementById("charset").addEventListener("input", () => {
+                const N = document.getElementById("charset").value.length;
+                document.getElementById("shift-info").value = N > 0 ? `N = ${N}` : "";
+            });
+            const N = document.getElementById("charset").value.length;
+            document.getElementById("shift-info").value = `N = ${N}`;
+            selectModule("cesar");
+        }
+
+        // Ejecutar al cargar el DOM
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+
+</body>
+
+</html>

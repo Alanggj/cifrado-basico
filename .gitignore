@@ -1,0 +1,11 @@
+# Documentos Word — no subir al repo
+*.docx
+*.doc
+
+# Scripts temporales
+*.py
+
+# Sistema
+Thumbs.db
+.DS_Store
+desktop.ini

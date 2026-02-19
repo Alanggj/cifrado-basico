@@ -1,0 +1,260 @@
+/* --- Reset y variables globales ------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-dark:    #0d1117;
+  --bg-card:    #161b22;
+  --bg-input:   #0d1117;
+  --border:     #30363d;
+  --green:      #3fb950;
+  --green-dim:  #238636;
+  --amber:      #d29922;
+  --blue:       #58a6ff;
+  --text:       #c9d1d9;
+  --text-dim:   #8b949e;
+  --red:        #f85149;
+  --radius:     8px;
+  --shadow:     0 4px 24px rgba(0,0,0,.5);
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* --- Cabecera ------------------------------------------------------ */
+header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+header .logo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -1px;
+}
+header .logo span { color: var(--text-dim); font-weight: 400; }
+header .subtitle { color: var(--text-dim); font-size: .9rem; }
+
+/* --- Contenedor principal ----------------------------------------- */
+main {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* --- Tarjeta genérica --------------------------------------------- */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: 1.1rem;
+  color: var(--blue);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: .5rem;
+}
+.card p { color: var(--text-dim); font-size: .93rem; margin-bottom: .65rem; }
+.card p strong { color: var(--text); }
+.card blockquote {
+  border-left: 3px solid var(--amber);
+  padding: .5rem 1rem;
+  margin: 1rem 0;
+  background: rgba(210,153,34,.07);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic;
+  color: var(--amber);
+  font-size: .9rem;
+}
+
+/* --- Sección de pestañas (módulo seleccionado) -------------------- */
+.tab-bar {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+}
+.tab-bar button {
+  flex: 1;
+  padding: .65rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-dim);
+  font-size: .95rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all .2s;
+}
+.tab-bar button.active {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: #fff;
+}
+.tab-bar button:hover:not(.active) {
+  border-color: var(--green);
+  color: var(--text);
+}
+
+/* --- Etiquetas y campos de formulario ----------------------------- */
+label {
+  display: block;
+  font-size: .85rem;
+  color: var(--text-dim);
+  margin-bottom: .3rem;
+  margin-top: .9rem;
+}
+label .badge {
+  display: inline-block;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: .75rem;
+  margin-left: .4rem;
+  color: var(--amber);
+}
+input[type="text"],
+input[type="number"],
+textarea {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: .55rem .85rem;
+  font-size: .93rem;
+  font-family: 'Consolas', 'Courier New', monospace;
+  transition: border-color .2s;
+  outline: none;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus { border-color: var(--green); }
+textarea { resize: vertical; min-height: 90px; }
+
+/* --- Fila de shift (sólo César) ----------------------------------- */
+#cesar-options { display: flex; gap: 1rem; align-items: flex-end; }
+#cesar-options > div:first-child { flex: 1; }
+#cesar-options > div:last-child  { width: 120px; }
+
+/* --- Botones de acción -------------------------------------------- */
+.btn-row {
+  display: flex;
+  gap: .75rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: .6rem 1.5rem;
+  border-radius: var(--radius);
+  border: none;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+.btn-encrypt  { background: var(--green-dim); color: #fff; }
+.btn-decrypt  { background: #1f6feb; color: #fff; }
+.btn-copy     { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+.btn-clear    { background: transparent; border: 1px solid var(--border); color: var(--red); }
+.btn:hover    { opacity: .85; }
+
+/* --- Resultado ----------------------------------------------------- */
+#output-section { display: none; }
+#output-section.visible { display: block; }
+.result-box {
+  background: var(--bg-input);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 1rem;
+  color: var(--green);
+  word-break: break-all;
+  min-height: 50px;
+}
+.result-meta {
+  font-size: .8rem;
+  color: var(--text-dim);
+  margin-top: .4rem;
+}
+
+/* --- Tabla de caracteres ASCII ------------------------------------ */
+.ascii-table-wrap {
+  overflow-x: auto;
+  margin-top: .75rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+  font-family: monospace;
+}
+th {
+  background: var(--bg-dark);
+  color: var(--text-dim);
+  padding: .3rem .5rem;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+td {
+  padding: .25rem .5rem;
+  border: 1px solid var(--border);
+  text-align: center;
+  color: var(--text);
+}
+td.highlight { color: var(--green); font-weight: 600; }
+
+/* --- Indicador de módulo activo ----------------------------------- */
+.module-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: .25rem .85rem;
+  font-size: .8rem;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+.module-badge .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .3; }
+}
+
+/* --- Footer ------------------------------------------------------- */
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: .8rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+}
+
+/* --- Responsive --------------------------------------------------- */
+@media (max-width: 600px) {
+  #cesar-options { flex-direction: column; }
+  #cesar-options > div:last-child { width: 100%; }
+}
