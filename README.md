@@ -3,6 +3,7 @@
 Aplicacion web que implementa dos algoritmos de cifrado clasico sobre un conjunto de caracteres personalizable basado en ASCII.
 
 **Demo en vivo:** [cifradorclasico.netlify.app](https://cifradorclasico.netlify.app)
+**Demo secundario** [cifradorclasico.cloudflare](https://cifrado-basico.al351914.workers.dev)
 
 ---
 
