@@ -1,0 +1,8 @@
+{
+    "codeBlocks.ignoredLanguageIds": [
+        "git-commit",
+        "plaintext",
+        "Log",
+        "ignore"
+    ]
+}
