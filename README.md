@@ -4,6 +4,8 @@ Aplicacion web que intenta descifrar texto de forma automatica probando Cesar y 
 
 **Demo en vivo:** [cifradorclasico.netlify.app](https://cifradorclasico.netlify.app)
 
+**Demo secundario** [cifradorclasico.cloudflare](https://cifrado-basico.al351914.workers.dev)
+
 ---
 
 ## Que hace
