@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cifrador Clásico | César &amp; Atbash</title>
+    <title>Descifrador Automático | César &amp; Atbash</title>
 
     <link rel="stylesheet" href="style.css" />
 </head>
@@ -15,29 +15,14 @@
     <header>
         <div>
             <div class="logo">Práctica 1</div>
-            <div class="subtitle">Cifrado Clásico · César &amp; Atbash · Base ASCII</div>
+            <div class="subtitle">Descifrado automático · César &amp; Atbash · Base ASCII</div>
         </div>
     </header>
 
     <main>
 
         <section class="card" id="cipher-app">
-            <h2>Módulo de Cifrado / Descifrado</h2>
-
-
-            <div class="module-badge" id="module-badge">
-                <span class="dot"></span>
-                <span id="module-name">Módulo: César</span>
-            </div>
-
-            <div class="tab-bar">
-                <button class="active" id="tab-cesar" onclick="selectModule('cesar')">
-                    Cifrado César
-                </button>
-                <button id="tab-atbash" onclick="selectModule('atbash')">
-                    Cifrado Atbash
-                </button>
-            </div>
+            <h2>Descifrado automático</h2>
 
             <label for="charset">
                 Conjunto de caracteres
@@ -51,27 +36,19 @@
                 que <em>no</em> estén en este conjunto pasarán tal cual al resultado.
             </p>
 
-            <div id="cesar-options">
-                <div>
-                    <label for="shift-value">Desplazamiento (shift) <span class="badge">sólo César</span></label>
-                    <input type="number" id="shift-value" value="3" min="-9999" max="9999" />
-                </div>
-                <div>
-                    <label for="shift-info">Módulo (N)</label>
-                    <input type="text" id="shift-info" readonly placeholder="—" />
-                </div>
-            </div>
-
-
             <label for="input-text">Texto de entrada</label>
-            <textarea id="input-text" placeholder="Escribe aquí el mensaje a cifrar o descifrar…"></textarea>
+            <textarea id="input-text" placeholder="Escribe aquí el mensaje cifrado…"></textarea>
 
 
             <div class="btn-row">
-                <button class="btn btn-encrypt" onclick="process('encrypt')">Cifrar</button>
-                <button class="btn btn-decrypt" onclick="process('decrypt')">Descifrar</button>
+                <button class="btn btn-decrypt" onclick="process()">Descifrar automático</button>
+                <button class="btn btn-copy" onclick="showCombinationTable()">Ver tabla de combinaciones</button>
                 <button class="btn btn-clear" onclick="clearAll()">Limpiar</button>
             </div>
+
+            <p style="font-size:.82rem;margin-top:.75rem;">
+                El sistema prueba César y Atbash automáticamente y devuelve el texto que parece más probable.
+            </p>
 
 
             <div id="output-section">
@@ -81,6 +58,29 @@
                 <div class="btn-row">
                     <button class="btn btn-copy" onclick="copyResult()">Copiar resultado</button>
                     <button class="btn btn-copy" onclick="swapToInput()">Usar como entrada</button>
+                </div>
+            </div>
+
+            <div id="combo-section">
+                <label style="margin-top:1.2rem;">Tabla de combinaciones</label>
+                <p style="font-size:.82rem;margin-top:.35rem;">
+                    Se muestran todas las opciones ordenadas por coincidencia. Las primeras 3 filas son las más probables.
+                </p>
+                <div class="ascii-table-wrap" style="margin-top:.6rem;">
+                    <table id="combo-table">
+                        <thead>
+                            <tr>
+                                <th>Ámbito</th>
+                                <th>#</th>
+                                <th>Algoritmo</th>
+                                <th>Shift</th>
+                                <th>Score</th>
+                                <th>Coincidencia</th>
+                                <th>Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="combo-table-body"></tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -95,25 +95,6 @@
 
     <script>
         "use strict";
-        const App = {
-            module: "cesar"
-        };
-
-        // [Seccion1]
-        function selectModule(mod) {
-            App.module = mod;
-
-            document.getElementById("tab-cesar").classList.toggle("active", mod === "cesar");
-            document.getElementById("tab-atbash").classList.toggle("active", mod === "atbash");
-            const names = { cesar: "Módulo: César", atbash: "Módulo: Atbash" };
-            document.getElementById("module-name").textContent = names[mod];
-            // El campo shift solo aplica en César
-            document.getElementById("cesar-options").style.opacity = mod === "cesar" ? "1" : "0.3";
-            document.getElementById("shift-value").disabled = mod !== "cesar";
-            document.getElementById("output-section").classList.remove("visible");
-        }
-
-        // [Seccion2]
         function cifrarCesar(texto, charset, shift) {
             const N = charset.length;
             if (N === 0) throw new Error("El conjunto de caracteres está vacío.");
@@ -125,12 +106,10 @@
             }).join("");
         }
 
-        // [Seccion3]
         function descifrarCesar(textoCifrado, charset, shift) {
             return cifrarCesar(textoCifrado, charset, -shift);
         }
 
-        // [Seccion4]
         function cifrarAtbash(texto, charset) {
             const N = charset.length;
             if (N === 0) throw new Error("El conjunto de caracteres está vacío.");
@@ -141,44 +120,439 @@
             }).join("");
         }
 
-        // [Seccion 5]
         function descifrarAtbash(textoCifrado, charset) {
             return cifrarAtbash(textoCifrado, charset);
         }
 
-        // [Seccion6]
-        function process(action) {
+        const PALABRAS_FRECUENTES = [
+            "de", "la", "que", "el", "en", "y", "a", "los", "del", "se",
+            "las", "por", "con", "para", "una", "un", "al", "como", "no", "es",
+            "más", "o", "su", "le", "ya", "lo", "muy", "pero", "si", "te",
+            "me", "mi", "tu", "nos", "les", "este", "esta", "estos", "estas", "ser",
+            "hay", "fue", "era", "son", "todo", "toda", "sobre", "también", "sin"
+        ];
+
+        const PATRONES_COMUNES = [
+            { patron: " de ", peso: 9 },
+            { patron: " la ", peso: 8 },
+            { patron: " que ", peso: 10 },
+            { patron: " el ", peso: 7 },
+            { patron: " en ", peso: 7 },
+            { patron: " y ", peso: 5 },
+            { patron: " para ", peso: 8 },
+            { patron: " con ", peso: 7 },
+            { patron: " por ", peso: 7 },
+            { patron: " una ", peso: 7 },
+            { patron: " un ", peso: 6 },
+            { patron: " del ", peso: 8 },
+            { patron: " al ", peso: 6 },
+            { patron: " no ", peso: 6 }
+        ];
+
+        const DIGRAMAS_COMUNES = [
+            "de", "en", "es", "la", "el", "que", "re", "ra", "ar", "os",
+            "as", "nt", "st", "to", "ci", "co", "te", "se", "io", "er"
+        ];
+
+        const LETRAS_RARAS = ["k", "w", "x", "z", "j", "v"];
+
+        const PALABRAS_EXAMEN = [
+            "punto", "puntos", "pregunta", "examen", "valor", "vale", "respuesta",
+            "resuelva", "responder", "inciso", "total", "nombre", "fecha", "grupo",
+            "materia", "calificacion", "actividad", "ejercicio", "opcion", "correcta"
+        ];
+
+        function normalizarTexto(texto) {
+            return ` ${texto.toLowerCase().replace(/\s+/g, " ").trim()} `;
+        }
+
+        function contarCoincidencias(texto, patron) {
+            let total = 0;
+            let index = texto.indexOf(patron);
+
+            while (index !== -1) {
+                total += 1;
+                index = texto.indexOf(patron, index + patron.length);
+            }
+
+            return total;
+        }
+
+        function detectarPatronesExamen(normalizado, textoOriginal) {
+            let score = 0;
+
+            for (const palabra of PALABRAS_EXAMEN) {
+                score += contarCoincidencias(` ${normalizado} `, ` ${palabra} `) * 9;
+            }
+
+            if (/^\s*(punto|puntos)\s*:\s*\d+/i.test(textoOriginal)) score += 30;
+            if (/^\s*\d+\s*(punto|puntos)\s*:?\s*/i.test(textoOriginal)) score += 24;
+            if (/(punto|puntos)\s*:\s*\d+\s*$/i.test(textoOriginal)) score += 26;
+            if (/(punto|puntos)\s*:?\s*\d+\s*$/i.test(textoOriginal)) score += 18;
+            if (/[:.\-]\s*$/i.test(textoOriginal)) score += 4;
+
+            const inicio = normalizado.trimStart();
+            const final = normalizado.trimEnd();
+
+            if (/^(punto|puntos)\b/.test(inicio)) score += 18;
+            if (/\b(punto|puntos)\s*:\s*\d+\b/.test(inicio)) score += 22;
+            if (/\b(punto|puntos)\b/.test(final)) score += 10;
+
+            return score;
+        }
+
+        function puntuarTextoProbable(texto) {
+            const normalizado = normalizarTexto(texto);
+            const palabras = normalizado.match(/[a-záéíóúüñ]+/g) || [];
+            let score = detectarPatronesExamen(normalizado, texto);
+
+            if (palabras.length > 0) {
+                const longitudPromedio = palabras.reduce((total, palabra) => total + palabra.length, 0) / palabras.length;
+                score += Math.max(0, 12 - Math.abs(longitudPromedio - 4.8) * 2.5);
+
+                const palabrasDistintas = new Set(palabras).size;
+                const riquezaLexica = palabrasDistintas / palabras.length;
+                score += Math.max(0, 8 - Math.abs(riquezaLexica - 0.62) * 18);
+            }
+
+            for (const palabra of PALABRAS_FRECUENTES) {
+                score += contarCoincidencias(` ${normalizado} `, ` ${palabra} `) * 7;
+            }
+
+            for (const patron of PATRONES_COMUNES) {
+                score += contarCoincidencias(normalizado, patron.patron) * patron.peso;
+            }
+
+            const letras = normalizado.replace(/[^a-záéíóúüñ]/g, "");
+            if (letras.length > 0) {
+                const vocales = (letras.match(/[aeiouáéíóúü]/g) || []).length;
+                const proporcionVocales = vocales / letras.length;
+                score += Math.max(0, 18 - Math.abs(proporcionVocales - 0.43) * 60);
+
+                const espacios = (normalizado.match(/ /g) || []).length;
+                score += Math.min(14, espacios * 0.75);
+
+                for (const digrama of DIGRAMAS_COMUNES) {
+                    score += contarCoincidencias(letras, digrama) * 1.4;
+                }
+
+                for (const letra of LETRAS_RARAS) {
+                    score -= contarCoincidencias(letras, letra) * 0.45;
+                }
+
+                if (/[qwxy]/.test(letras) && !/[áéíóúüñ]/.test(letras)) {
+                    score -= 2;
+                }
+
+                const letrasFrecuentes = ["e", "a", "o", "s", "n", "r", "i", "l", "d", "t"];
+                for (const letra of letrasFrecuentes) {
+                    const regex = new RegExp(letra, "g");
+                    const coincidencias = (normalizado.match(regex) || []).length;
+                    score += coincidencias * 0.15;
+                }
+
+                const secuenciasVocales = (letras.match(/[aeiouáéíóúü]{2,}/g) || []).length;
+                score += Math.min(8, secuenciasVocales * 1.4);
+
+                const secuenciasConsonantes = (letras.match(/[bcdfghjklmnñpqrstvwxyz]{4,}/g) || []).length;
+                score -= secuenciasConsonantes * 1.2;
+            }
+
+            if (/[?!]{2,}/.test(texto)) score -= 2;
+            if (/\b\d{4,}\b/.test(texto)) score += 2;
+
+            return score;
+        }
+
+        function detectarDescifradoAutomatico(texto, charset) {
+            const N = charset.length;
+            const candidatos = [];
+
+            candidatos.push({
+                algoritmo: "sin_cifrar",
+                shift: null,
+                texto,
+                score: puntuarTextoProbable(texto) + 6
+            });
+
+            for (let shift = 0; shift < N; shift++) {
+                const descifrado = descifrarCesar(texto, charset, shift);
+                candidatos.push({
+                    algoritmo: "cesar",
+                    shift,
+                    texto: descifrado,
+                    score: puntuarTextoProbable(descifrado)
+                });
+            }
+
+            const atbash = descifrarAtbash(texto, charset);
+            candidatos.push({
+                algoritmo: "atbash",
+                shift: null,
+                texto: atbash,
+                score: puntuarTextoProbable(atbash)
+            });
+
+            candidatos.sort((a, b) => b.score - a.score);
+            const mejor = candidatos[0];
+            const segundo = candidatos[1] ?? { score: 0 };
+            const topCandidatos = candidatos.slice(0, 3).map(candidato => ({
+                algoritmo: candidato.algoritmo,
+                shift: candidato.shift,
+                score: candidato.score,
+                confianza: candidato.score > 0
+                    ? Math.round(100 * (candidato.score / (candidato.score + segundo.score + 1) * 0.7 + Math.min(1, candidato.score / 80) * 0.3))
+                    : 0,
+                texto: candidato.texto
+            }));
+            const diferencia = mejor.score - segundo.score;
+            let confianza = 0;
+            const margenSeguro = diferencia >= 15 && mejor.score >= 35;
+            const margenMuySeguro = diferencia >= 25 && mejor.score >= 50;
+
+            if (mejor.score > 0) {
+                const relacion = mejor.score / (mejor.score + segundo.score + 1);
+                const evidencia = Math.min(1, mejor.score / 80);
+                confianza = Math.round(100 * (relacion * 0.7 + evidencia * 0.3));
+            }
+
+            if (margenSeguro) confianza = Math.max(confianza, 78);
+            if (margenMuySeguro) confianza = Math.max(confianza, 90);
+            if (mejor.score < 25) confianza = Math.min(confianza, 60);
+            if (diferencia < 8) confianza = Math.min(confianza, 55);
+
+            if (detectadoEsDebil(mejor.score, segundo.score)) {
+                confianza = Math.min(confianza, 50);
+            }
+
+            const concluyente = confianza >= 70;
+
+            return {
+                ...mejor,
+                confianza,
+                diferencia,
+                segundoScore: segundo.score,
+                concluyente,
+                topCandidatos
+            };
+        }
+
+        function listarCombinaciones(texto, charset) {
+            const N = charset.length;
+            const candidatos = [];
+
+            candidatos.push({
+                algoritmo: "sin_cifrar",
+                shift: null,
+                texto,
+                score: puntuarTextoProbable(texto) + 6
+            });
+
+            for (let shift = 0; shift < N; shift++) {
+                const descifrado = descifrarCesar(texto, charset, shift);
+                candidatos.push({
+                    algoritmo: "cesar",
+                    shift,
+                    texto: descifrado,
+                    score: puntuarTextoProbable(descifrado)
+                });
+            }
+
+            const atbash = descifrarAtbash(texto, charset);
+            candidatos.push({
+                algoritmo: "atbash",
+                shift: null,
+                texto: atbash,
+                score: puntuarTextoProbable(atbash)
+            });
+
+            candidatos.sort((a, b) => b.score - a.score);
+            const mejorScore = candidatos[0]?.score ?? 1;
+
+            return candidatos.map((candidato, index) => ({
+                ...candidato,
+                rank: index + 1,
+                coincidencia: Math.max(0, Math.round((candidato.score / Math.max(mejorScore, 1)) * 100))
+            }));
+        }
+
+        function detectadoEsDebil(mejorScore, segundoScore) {
+            return mejorScore < 30 || (mejorScore - segundoScore) < 6;
+        }
+
+        function etiquetaCandidato(candidato) {
+            if (candidato.algoritmo === "cesar") return `César ${candidato.shift}`;
+            if (candidato.algoritmo === "atbash") return "Atbash";
+            return "Sin cifrar";
+        }
+
+        function escaparHtml(texto) {
+            return texto
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function renderCombinationTable(candidatos) {
+            const tbody = document.getElementById("combo-table-body");
+            const filas = candidatos.map((candidato, index) => {
+                const rowClass = candidato.rank === 1 ? "best-1" : (candidato.rank === 2 ? "best-2" : (candidato.rank === 3 ? "best-3" : ""));
+                const shift = candidato.algoritmo === "cesar" ? `${candidato.shift}` : "-";
+                const resultado = escaparHtml(candidato.texto);
+                return `
+                    <tr class="${rowClass}">
+                        <td>${candidato.linea}</td>
+                        <td>${candidato.rank}</td>
+                        <td>${etiquetaCandidato(candidato)}</td>
+                        <td>${shift}</td>
+                        <td>${candidato.score.toFixed(1)}</td>
+                        <td>${candidato.coincidencia}%</td>
+                        <td>${resultado}</td>
+                    </tr>
+                `;
+            }).join("");
+
+            tbody.innerHTML = filas;
+            document.getElementById("combo-section").classList.add("visible");
+        }
+
+        function showCombinationTable() {
             try {
-                const charset = document.getElementById("charset").value;
+                const charsetOriginal = document.getElementById("charset").value;
                 const inputText = document.getElementById("input-text").value;
-                const shift = parseInt(document.getElementById("shift-value").value, 10) || 0;
+                const charset = normalizarCharsetUnico(charsetOriginal);
+
+                if (charset !== charsetOriginal) {
+                    document.getElementById("charset").value = charset;
+                }
 
                 if (!charset.trim()) throw new Error("El conjunto de caracteres no puede estar vacío.");
                 if (!inputText) throw new Error("Por favor escribe un texto a procesar.");
 
-                let resultado = "";
-                let metaInfo = "";
+                const combinacionesBloque = listarCombinaciones(inputText, charset).map(candidato => ({
+                    ...candidato,
+                    linea: "Bloque"
+                }));
+
+                renderCombinationTable(combinacionesBloque);
+                document.getElementById("combo-section").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            } catch (err) {
+                document.getElementById("result-box").textContent = "Error: " + err.message;
+                document.getElementById("result-box").style.color = "var(--red)";
+                document.getElementById("result-meta").textContent = "";
+                document.getElementById("output-section").classList.add("visible");
+                setTimeout(() => { document.getElementById("result-box").style.color = ""; }, 3000);
+            }
+        }
+
+        function normalizarCharsetUnico(charset) {
+            const vistos = new Set();
+            let limpio = "";
+
+            for (const ch of charset) {
+                if (vistos.has(ch)) continue;
+                vistos.add(ch);
+                limpio += ch;
+            }
+
+            return limpio;
+        }
+
+        function resolverPorLineas(inputText, charset, N) {
+            const lineas = inputText.split(/\r?\n/);
+            const resultadoLineas = [];
+            const noConcluyentes = [];
+            let concluyentes = 0;
+
+            lineas.forEach((linea, index) => {
+                if (!linea.trim()) {
+                    resultadoLineas.push("");
+                    return;
+                }
+
+                const detectado = detectarDescifradoAutomatico(linea, charset);
+                resultadoLineas.push(detectado.texto);
+
+                if (detectado.concluyente) {
+                    concluyentes += 1;
+                    return;
+                }
+
+                const alternativas = detectado.topCandidatos
+                    .slice(0, 3)
+                    .map(candidato => `${etiquetaCandidato(candidato)} (${candidato.score.toFixed(1)})`)
+                    .join(" · ");
+
+                noConcluyentes.push(
+                    `L${index + 1}: mejor ${etiquetaCandidato(detectado)} | Conf ${detectado.confianza}% | ${alternativas}`
+                );
+            });
+
+            const lineasConTexto = lineas.filter(linea => linea.trim()).length;
+            let metaInfo = `Modo: Línea por línea | Lineas analizadas: ${lineasConTexto} | Concluyentes: ${concluyentes} | No concluyentes: ${noConcluyentes.length} | N: ${N}`;
+
+            if (noConcluyentes.length > 0) {
+                metaInfo += `\nRevision manual sugerida -> ${noConcluyentes.slice(0, 4).join(" || ")}`;
+            }
+
+            return {
+                resultado: resultadoLineas.join("\n"),
+                metaInfo,
+                concluyentes,
+                noConcluyentes: noConcluyentes.length
+            };
+        }
+
+        function resolverComoBloque(inputText, charset, N) {
+            const detectado = detectarDescifradoAutomatico(inputText, charset);
+            let metaInfo = `Modo: Bloque completo | ${detectado.concluyente ? "Concluyente" : "No concluyente"} | Detectado: ${etiquetaCandidato(detectado)} | Confianza: ${detectado.confianza}% | N: ${N}`;
+
+            if (!detectado.concluyente) {
+                const alternativas = detectado.topCandidatos
+                    .slice(0, 3)
+                    .map(candidato => `${etiquetaCandidato(candidato)} (${candidato.score.toFixed(1)})`)
+                    .join(" · ");
+                metaInfo += `\nAlternativas de bloque -> ${alternativas}`;
+            }
+
+            return {
+                resultado: detectado.texto,
+                metaInfo,
+                score: detectado.score,
+                concluyente: detectado.concluyente,
+                confianza: detectado.confianza
+            };
+        }
+
+        function process() {
+            try {
+                const charsetOriginal = document.getElementById("charset").value;
+                const inputText = document.getElementById("input-text").value;
+                const charset = normalizarCharsetUnico(charsetOriginal);
+
+                if (charset !== charsetOriginal) {
+                    document.getElementById("charset").value = charset;
+                }
+
+                if (!charset.trim()) throw new Error("El conjunto de caracteres no puede estar vacío.");
+                if (!inputText) throw new Error("Por favor escribe un texto a procesar.");
                 const N = charset.length;
 
-                if (App.module === "cesar") {
-                    const shiftNorm = ((shift % N) + N) % N;
-                    if (action === "encrypt") {
-                        resultado = cifrarCesar(inputText, charset, shift);
-                        metaInfo = `César | Cifrado | Shift: ${shift} (norm: ${shiftNorm}) | N: ${N}`;
-                    } else {
-                        resultado = descifrarCesar(inputText, charset, shift);
-                        metaInfo = `César | Descifrado | Shift: -${shift} | N: ${N}`;
-                    }
-                    document.getElementById("shift-info").value = `N = ${N}`;
-                } else {
-                    if (action === "encrypt") {
-                        resultado = cifrarAtbash(inputText, charset);
-                        metaInfo = `Atbash | Cifrado | N: ${N}`;
-                    } else {
-                        resultado = descifrarAtbash(inputText, charset);
-                        metaInfo = `Atbash | Descifrado | N: ${N}`;
-                    }
-                }
+                const lineasConTexto = inputText.split(/\r?\n/).filter(linea => linea.trim()).length;
+                const porLineas = resolverPorLineas(inputText, charset, N);
+                const porBloque = resolverComoBloque(inputText, charset, N);
+
+                // Si hay varias lineas y el bloque es igual o mejor, priorizamos bloque para no romper incisos.
+                const scoreLinea = puntuarTextoProbable(porLineas.resultado) + (porLineas.concluyentes * 4) - (porLineas.noConcluyentes * 5);
+                const scoreBloque = puntuarTextoProbable(porBloque.resultado) + (porBloque.concluyente ? 8 : 0);
+                const usarBloque = lineasConTexto > 1 && scoreBloque >= scoreLinea;
+
+                const resultado = usarBloque ? porBloque.resultado : porLineas.resultado;
+                const metaInfo = usarBloque
+                    ? `${porBloque.metaInfo}\nComparacion interna -> Bloque: ${scoreBloque.toFixed(1)} vs Lineas: ${scoreLinea.toFixed(1)}`
+                    : `${porLineas.metaInfo}\nComparacion interna -> Lineas: ${scoreLinea.toFixed(1)} vs Bloque: ${scoreBloque.toFixed(1)}`;
 
                 document.getElementById("result-box").textContent = resultado;
                 document.getElementById("result-meta").textContent = metaInfo;
@@ -194,14 +568,14 @@
             }
         }
 
-        // [Seccion7]
         function clearAll() {
             document.getElementById("input-text").value = "";
             document.getElementById("result-box").textContent = "";
             document.getElementById("output-section").classList.remove("visible");
+            document.getElementById("combo-table-body").innerHTML = "";
+            document.getElementById("combo-section").classList.remove("visible");
         }
 
-        // [Seccion8]
         function copyResult() {
             const text = document.getElementById("result-box").textContent;
             if (!text || text.startsWith("Error:")) return;
@@ -210,7 +584,6 @@
                 .catch(() => alert("No se pudo copiar automáticamente. Selecciona el texto manualmente."));
         }
 
-        // [Seccion9]
         function swapToInput() {
             const text = document.getElementById("result-box").textContent;
             if (!text || text.startsWith("Error:")) return;
@@ -219,15 +592,9 @@
             document.getElementById("input-text").focus();
         }
 
-        // [Seccion10]
         function init() {
-            document.getElementById("charset").addEventListener("input", () => {
-                const N = document.getElementById("charset").value.length;
-                document.getElementById("shift-info").value = N > 0 ? `N = ${N}` : "";
-            });
-            const N = document.getElementById("charset").value.length;
-            document.getElementById("shift-info").value = `N = ${N}`;
-            selectModule("cesar");
+            document.getElementById("output-section").classList.remove("visible");
+            document.getElementById("combo-section").classList.remove("visible");
         }
 
         // Ejecutar al cargar el DOM

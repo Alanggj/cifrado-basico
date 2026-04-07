@@ -1,6 +1,6 @@
-# Cifrado Clasico — Cesar & Atbash
+# Descifrador Automatico — Cesar & Atbash
 
-Aplicacion web que implementa dos algoritmos de cifrado clasico sobre un conjunto de caracteres personalizable basado en ASCII.
+Aplicacion web que intenta descifrar texto de forma automatica probando Cesar y Atbash sobre un conjunto de caracteres personalizable basado en ASCII.
 
 **Demo en vivo:** [cifradorclasico.netlify.app](https://cifradorclasico.netlify.app)
 
@@ -8,11 +8,15 @@ Aplicacion web que implementa dos algoritmos de cifrado clasico sobre un conjunt
 
 ## Que hace
 
-- Cifra y descifra texto usando el **Cifrado Cesar** con desplazamiento (shift) configurable
-- Cifra y descifra texto usando el **Cifrado Atbash** (inversion del alfabeto)
-- Permite definir el **conjunto de caracteres** que participan en el cifrado (el "alfabeto"), totalmente personalizable
+- Detecta automaticamente si el texto parece estar cifrado con **Cesar** o **Atbash**
+- Calcula el desplazamiento probable cuando el resultado parece ser **Cesar**
+- Usa pistas de texto de examen, incluyendo patrones como **Punto/Puntos:** al inicio o al final
+- Analiza el texto **linea por linea** para examenes mixtos (lineas claras + lineas cifradas)
+- Si una linea no es concluyente, muestra alternativas para revision manual
+- Incluye un boton para ver una **tabla con todas las combinaciones** (Sin cifrar, Cesar por shift y Atbash), resaltando las mas probables
+- Permite definir el **conjunto de caracteres** que participan en el descifrado (el "alfabeto"), totalmente personalizable
 - Los caracteres fuera del conjunto pasan sin modificacion al resultado
-- Muestra el modulo N (tamano del charset) en tiempo real
+- Muestra un porcentaje de confianza para el resultado detectado
 - Incluye botones para copiar el resultado y para usarlo como nueva entrada
 
 ---
@@ -20,28 +24,25 @@ Aplicacion web que implementa dos algoritmos de cifrado clasico sobre un conjunt
 ## Como usarlo
 
 1. Abre [cifradorclasico.netlify.app](https://cifradorclasico.netlify.app) o el archivo `index.html` directamente en tu navegador
-2. Selecciona el modulo: **Cifrado Cesar** o **Cifrado Atbash**
-3. Edita el campo **Conjunto de caracteres** si necesitas un alfabeto diferente al predeterminado
-4. En Cesar, ajusta el **Desplazamiento (shift)**
-5. Escribe tu mensaje en el campo de texto
-6. Presiona **Cifrar** o **Descifrar**
+2. Edita el campo **Conjunto de caracteres** si necesitas un alfabeto diferente al predeterminado
+3. Escribe tu mensaje cifrado en el campo de texto
+4. Presiona **Descifrar automático**. El sistema devuelve el resultado con el algoritmo y la confianza detectados
 
 ---
 
 ## Algoritmos implementados
 
-### Cifrado Cesar
+### Cesar
 
-Desplaza cada caracter del texto una cantidad fija `shift` de posiciones dentro del charset.
+El sistema prueba todos los desplazamientos posibles dentro del charset y escoge el resultado que mejor coincide con texto en espanol.
+
+La puntuacion incluye frecuencia de letras, palabras comunes y patrones tipicos de examen como "Punto:" o "Puntos: 10".
 
 ```
-caracter_cifrado = charset[ (indice + shift) mod N ]
 caracter_descifrado = charset[ (indice - shift + N) mod N ]
 ```
 
-El shift se normaliza con `((shift % N) + N) % N` para soportar valores negativos y mayores que N.
-
-### Cifrado Atbash
+### Atbash
 
 Invierte el charset: el primer caracter se convierte en el ultimo, el segundo en el penultimo, etc.
 
@@ -49,7 +50,7 @@ Invierte el charset: el primer caracter se convierte en el ultimo, el segundo en
 caracter_cifrado = charset[ (N - 1) - indice ]
 ```
 
-Al ser simetrico, cifrar y descifrar usan la misma operacion.
+El resultado final se elige automaticamente entre Cesar y Atbash.
 
 ---
 
